@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fra seerah til handling – videogenerator</title>
+<meta name="description" content="Lav seerah-episoder om til 1080p-videoer og promo-grafik direkte i browseren.">
+<style>
+/*FONTS*/
+:root{--bg:#06231c;--panel:#0b3229;--line:#2a5a4b;--gold:#d4af37;--gold2:#f0d68c;--cream:#f3ecd9;--muted:#9fb8ad}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#0e3d31,#041a15 70%) fixed;color:var(--cream);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 20px 60px}
+header{text-align:center;margin-bottom:18px}
+header .ar{font-family:"Amiri";font-size:40px;color:var(--gold);direction:rtl;line-height:1.4}
+header .da{font-family:"Cormorant Garamond";font-weight:600;font-size:24px;color:var(--cream)}
+.tabs{display:flex;justify-content:center;gap:6px;margin:16px 0 18px}
+.tab{font-family:"Cinzel";font-weight:600;letter-spacing:.14em;font-size:14px;padding:10px 22px;border-radius:999px;border:1px solid #3c6d5d;color:var(--gold2);text-decoration:none;background:rgba(255,255,255,.02)}
+.tab.on{background:linear-gradient(#f0d68c,#c99a2e);color:#1d1606;border-color:transparent}
+.card{background:rgba(11,50,41,.55);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
+.stage{border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+canvas{display:block;width:100%;height:auto;background:#041a15}
+.drop{border:2px dashed #3c6d5d;border-radius:14px;padding:22px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02)}
+.drop.over{border-color:var(--gold);background:rgba(212,175,55,.08)}
+.drop strong{color:var(--gold2);font-size:17px}
+.drop small{display:block;color:var(--muted);margin-top:6px}
+.fname{margin-top:8px;font-size:14px;color:var(--cream);text-align:center;word-break:break-all}
+.grid{display:grid;grid-template-columns:110px 1fr 1fr;gap:12px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.f label{display:block;color:var(--muted);font-size:13px;margin-bottom:5px}
+input[type=text],input[type=number],select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #3c6d5d;background:var(--panel);color:var(--cream);font-size:15px;font-family:inherit}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.check{display:flex;gap:10px;align-items:center;font-size:15px;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--gold)}
+.hint{color:var(--muted);font-size:13px;line-height:1.5}
+button{font:inherit;font-weight:600;padding:11px 20px;border-radius:10px;border:0;cursor:pointer;background:linear-gradient(#f0d68c,#c99a2e);color:#1d1606;box-shadow:0 4px 14px rgba(212,175,55,.25)}
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+button.ghost{background:transparent;color:var(--gold2);border:1px solid #6b5a22;box-shadow:none}
+button.ghost.on{background:rgba(212,175,55,.18)}
+.prog{margin-top:14px}
+.bar{height:10px;border-radius:6px;background:#0b3229;overflow:hidden;border:1px solid #234c40}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c99a2e,#f0d68c);transition:width .2s}
+.status{margin-top:8px;font-size:14px;color:var(--muted);min-height:20px}
+.err{color:#ffb4a8}
+.promo{display:grid;grid-template-columns:2fr 1fr 1.2fr;gap:16px;align-items:start}
+@media(max-width:900px){.promo{grid-template-columns:1fr 1fr}}
+.pitem h3{font-family:"Cinzel";font-weight:600;font-size:14px;letter-spacing:.08em;color:var(--gold2);margin:0 0 4px}
+.pitem .sz{color:var(--muted);font-size:12px;margin-bottom:8px}
+.pitem canvas{border-radius:10px;border:1px solid var(--line)}
+.pitem button{margin-top:10px;width:100%}
+.teaser{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start}
+@media(max-width:720px){.teaser{grid-template-columns:1fr}}
+h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color:var(--gold2);margin:0 0 10px}
+.tips li{margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="ar">مِنَ السِّيرَةِ إِلَى المَسِيرَةِ</div>
+    <div class="da">Fra seerah til handling</div>
+  </header>
+
+  <div class="card">
+    <div class="drop" id="drop">
+      <strong>Træk episodens lydfil hertil</strong>
+      <small>eller klik for at vælge · mp3, m4a, wav · intet uploades</small>
+      <input type="file" id="pick" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" hidden>
+    </div>
+    <div class="fname" id="fname">Ingen fil valgt</div>
+    <div class="grid" style="margin-top:14px">
+      <div class="f"><label for="ep">Episode</label><input type="number" id="ep" min="1" value="1"></div>
+      <div class="f"><label for="eptitle">Episodens titel (valgfri)</label><input type="text" id="eptitle" placeholder="fx Arabien før islam"></div>
+      <div class="f"><label for="when">Udgivelse (til promo)</label><input type="text" id="when" placeholder="fx Ny episode hver fredag"></div>
+    </div>
+  </div>
+
+  <nav class="tabs"><a class="tab on" data-t="video" href="#video">VIDEO</a><a class="tab" data-t="promo" href="#promo">PROMO</a></nav>
+
+  <section class="pane" id="pane-video">
+    <div class="stage"><canvas id="view" width="1920" height="1080"></canvas></div>
+    <div class="card">
+      <div class="row" style="margin-top:0">
+        <label class="check"><input type="checkbox" id="enh" checked> Diskret lydforbedring</label>
+        <button class="ghost" id="ab" disabled>Lyt før/efter</button>
+        <span class="hint" id="abtxt">Fjerner rumlen, dæmper mudder, giver lidt mere nærvær og ensartet lydstyrke (−16 LUFS).</span>
+      </div>
+      <div class="row" id="abwrap" hidden>
+        <button class="ghost abbtn" data-w="orig">▶ Original</button>
+        <button class="ghost abbtn" data-w="enh">▶ Forbedret</button>
+        <button class="ghost abbtn" data-w="stop">■ Stop</button>
+      </div>
+      <div class="row">
+        <button id="go" disabled>Lav video (1080p)</button>
+        <button id="dl" class="ghost" hidden>Download MP4</button>
+      </div>
+      <div class="prog" hidden><div class="bar"><i id="barfill"></i></div><div class="status" id="status"></div></div>
+    </div>
+    <p class="hint" style="margin-top:14px">Brug Chrome eller Edge på computer. Videoen laves på din egen computer og bruger grafikkortet, når det er muligt.</p>
+  </section>
+
+  <section class="pane" id="pane-promo" hidden>
+    <div class="card">
+      <h2>Grafik til den nye episode</h2>
+      <p class="hint" style="margin-top:0">Opdateres automatisk med episodenummer, titel og udgivelsestekst ovenfor.</p>
+      <div class="promo">
+        <div class="pitem"><h3>YouTube-thumbnail</h3><div class="sz">1280×720</div><canvas id="pv-thumb"></canvas><button id="dl-thumb">Download PNG</button></div>
+        <div class="pitem"><h3>Story / status</h3><div class="sz">1080×1920</div><canvas id="pv-story"></canvas><button id="dl-story">Download PNG</button></div>
+        <div class="pitem"><h3>Opslag</h3><div class="sz">1080×1080</div><canvas id="pv-post"></canvas><button id="dl-post">Download PNG</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Teaser-video (lodret)</h2>
+      <div class="teaser">
+        <div class="pitem"><canvas id="pv-teaser" width="1080" height="1920"></canvas></div>
+        <div>
+          <p class="hint" style="margin-top:0">Et kort klip fra episoden med lydsøjler – til Reels, Shorts, TikTok og WhatsApp-status. Vælg et stærkt øjeblik.</p>
+          <div class="grid" style="grid-template-columns:1fr 1fr">
+            <div class="f"><label for="tstart">Start (mm:ss)</label><input type="text" id="tstart" value="1:00"></div>
+            <div class="f"><label for="tlen">Længde</label><select id="tlen"><option value="30">30 sek.</option><option value="45">45 sek.</option><option value="60" selected>60 sek.</option></select></div>
+          </div>
+          <div class="row"><button id="tgo" disabled>Lav teaser</button><button id="tdl" class="ghost" hidden>Download MP4</button></div>
+          <div class="prog" hidden><div class="bar"><i id="tbarfill"></i></div><div class="status" id="tstatus"></div></div>
+          <ul class="hint tips">
+            <li>Udgiv thumbnail sammen med episoden på YouTube.</li>
+            <li>Story + teaser samme dag; opslag dagen før som påmindelse.</li>
+            <li>Brug samme ugedag og tidspunkt hver uge – det skaber vane.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script>/*MUXER*/</script>
+<script>/*APP*/</script>
+</body>
+</html>
