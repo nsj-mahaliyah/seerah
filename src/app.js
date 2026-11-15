@@ -3,9 +3,10 @@
    kodning (WebCodecs H.264) og pakning (mp4-muxer). */
 
 const FPS = 25;
-const TITLE_AR = "مِنَ السِّيرَةِ إِلَى المَسِيرَةِ";
-const TITLE_DA = "Fra seerah til handling";
-const KICKER = "LYDSERIE  ·  PROFETENS SEERAH";
+const TITLE_AR_A = "سِيرَةُ النَّبِيِّ ﷺ", TITLE_AR_B = "الإِسْلَامُ فِي الوَاقِعِ";
+const TITLE_AR = TITLE_AR_A + " " + TITLE_AR_B;
+const TITLE_DA = "Profetens liv", TITLE_SUB = "ISLAM I PRAKSIS", SERIES = "Profetens liv – Islam i praksis";
+const KICKER = "LYDSERIE";
 const GOLD = "#d4af37", GOLD2 = "#f0d68c", CREAM = "#f5eedc";
 const N_HALF = 34;
 
@@ -124,15 +125,22 @@ function divider(ctx, cx, y, half, k = 1) {
   ctx.restore();
 }
 function arabicTitle(ctx, x, y, size, maxW) {
-  ctx.save(); ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  fitFont(ctx, TITLE_AR, 700, "Amiri", size, maxW);
-  const s = parseFloat(ctx.font.split(" ")[1]);
-  ctx.shadowColor = "rgba(255,200,90,0.55)"; ctx.shadowBlur = s * 0.32;
-  const tg = ctx.createLinearGradient(0, y - s * 0.6, 0, y + s * 0.55);
+  ctx.save(); ctx.direction = "rtl"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  let sz = size, wA, wB, gap;
+  do { ctx.font = `700 ${sz}px Amiri`; wA = ctx.measureText(TITLE_AR_A).width; wB = ctx.measureText(TITLE_AR_B).width; gap = sz * 0.85; sz -= 2; } while (wA + wB + gap > maxW && sz > 12);
+  sz += 2; const total = wA + wB + gap, right = x + total / 2, left = x - total / 2;
+  const tg = ctx.createLinearGradient(0, y - sz * 0.6, 0, y + sz * 0.55);
   tg.addColorStop(0, "#f7e2a0"); tg.addColorStop(0.55, GOLD); tg.addColorStop(1, "#b8862a");
-  ctx.fillStyle = tg; ctx.fillText(TITLE_AR, x, y); ctx.shadowBlur = 0; ctx.fillText(TITLE_AR, x, y);
+  ctx.fillStyle = tg; ctx.direction = "ltr"; ctx.textAlign = "center";
+  const cA = right - wA / 2, cB = left + wB / 2;
+  for (const pass of [1, 0]) {
+    ctx.shadowColor = "rgba(255,200,90,0.55)"; ctx.shadowBlur = pass ? sz * 0.32 : 0;
+    ctx.fillText(TITLE_AR_A, cA, y); ctx.fillText(TITLE_AR_B, cB, y);
+  }
+  ctx.fillStyle = GOLD; starPath(ctx, right - wA - gap / 2, y + sz * 0.08, sz * 0.2, 8, 0.45); ctx.fill();
   ctx.restore();
 }
+function subTitle(ctx, x, y, size) { ctx.save(); ctx.font = `600 ${size}px Cinzel`; ctx.fillStyle = GOLD2; drawSpaced(ctx, TITLE_SUB, x, y, size * 0.42); ctx.restore(); }
 function creamText(ctx, text, x, y, size, maxW, weight = 600, family = "'Cormorant Garamond'", color = CREAM) {
   ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
   fitFont(ctx, text, weight, family, size, maxW);
@@ -186,11 +194,12 @@ const meta = () => ({ ep: $("ep").value || "1", title: $("eptitle").value.trim()
 // 1920x1080 video-baggrund
 function bgVideo(m) {
   const c = mk(1920, 1080), ctx = c.getContext("2d"), W = 1920;
-  scene(ctx, 1920, 1080, { rosY: 625, rosR: 300, mosques: true, lanterns: [[330, 120, 1], [W - 330, 160, .85], [520, 40, .65], [W - 520, 60, .7]] });
+  scene(ctx, 1920, 1080, { rosY: 625, rosR: 300, mosques: true, lanterns: [[300, 120, 1], [W - 300, 160, .85], [150, 30, .6], [W - 150, 50, .6]] });
   ctx.font = "600 26px Cinzel"; ctx.fillStyle = GOLD2; drawSpaced(ctx, KICKER, W / 2, 92, 7);
-  arabicTitle(ctx, W / 2, 238, 112, 1000);
-  creamText(ctx, TITLE_DA, W / 2, 352, 66, 1000);
-  divider(ctx, W / 2, 410, 260);
+  arabicTitle(ctx, W / 2, 222, 96, 1080);
+  creamText(ctx, TITLE_DA, W / 2, 335, 74, 1000);
+  subTitle(ctx, W / 2, 400, 26);
+  divider(ctx, W / 2, 445, 260);
   if (m.title) { cartouche(ctx, W / 2, 878, `EPISODE ${m.ep}`, 42); creamText(ctx, m.title, W / 2, 962, 46, 900); }
   else cartouche(ctx, W / 2, 905, `EPISODE ${m.ep}`);
   return c;
@@ -200,14 +209,16 @@ function bgVertical(m, kind) {
   const W = 1080, H = 1920, c = mk(W, H), ctx = c.getContext("2d");
   scene(ctx, W, H, { rosY: 1010, rosR: 360, mosques: true, mosqueScale: 0.7, lanterns: [[150, 10, .6], [W - 150, 40, .55]] });
   ctx.font = "600 34px Cinzel"; ctx.fillStyle = GOLD2; drawSpaced(ctx, kind === "story" ? "NY EPISODE" : "LYDSERIE", W / 2, 140, 12);
-  if (kind === "story") { ctx.font = "600 26px Cinzel"; ctx.fillStyle = "rgba(240,214,140,0.8)"; drawSpaced(ctx, "PROFETENS SEERAH", W / 2, 192, 9); }
-  arabicTitle(ctx, W / 2, 360, 104, 880);
-  creamText(ctx, TITLE_DA, W / 2, 480, 70, 880);
-  divider(ctx, W / 2, 548, 230);
-  cartouche(ctx, W / 2, 1420, `EPISODE ${m.ep}`, 50);
-  if (m.title) creamText(ctx, m.title, W / 2, 1530, 60, 860);
+  if (kind === "story") { ctx.font = "600 26px Cinzel"; ctx.fillStyle = "rgba(240,214,140,0.8)"; drawSpaced(ctx, "LYDSERIE", W / 2, 192, 9); }
+  arabicTitle(ctx, W / 2, 330, 80, 900);
+  creamText(ctx, TITLE_DA, W / 2, 440, 84, 880);
+  subTitle(ctx, W / 2, 510, 30);
+  divider(ctx, W / 2, 560, 230);
+  const T = kind === "teaser";
+  cartouche(ctx, W / 2, T ? 1505 : 1420, `EPISODE ${m.ep}`, T ? 44 : 50);
+  if (m.title) creamText(ctx, m.title, W / 2, T ? 1592 : 1530, T ? 54 : 60, 860);
   const cta = kind === "story" ? (m.when || "Ude nu på YouTube") : "Hele episoden på YouTube";
-  ctx.save(); fitFont(ctx, cta.toUpperCase(), 600, "Cinzel", 36, 760); ctx.fillStyle = GOLD2; drawSpaced(ctx, cta.toUpperCase(), W / 2, 1640, 6); ctx.restore();
+  ctx.save(); fitFont(ctx, cta.toUpperCase(), 600, "Cinzel", 36, 760); ctx.fillStyle = GOLD2; drawSpaced(ctx, cta.toUpperCase(), W / 2, T ? 1672 : 1640, 6); ctx.restore();
   if (kind === "story") staticBars(ctx, W / 2, 1010, 9, 4, 360, 7);
   return c;
 }
@@ -215,10 +226,11 @@ function bgVertical(m, kind) {
 function bgSquare(m) {
   const W = 1080, c = mk(W, W), ctx = c.getContext("2d");
   scene(ctx, W, W, { rosY: 600, rosR: 250, mosques: false, lanterns: [[150, 70, .7], [W - 150, 100, .62]] });
-  ctx.font = "600 26px Cinzel"; ctx.fillStyle = GOLD2; drawSpaced(ctx, "NY EPISODE  ·  PROFETENS SEERAH", W / 2, 108, 6);
-  arabicTitle(ctx, W / 2, 225, 92, 760);
-  creamText(ctx, TITLE_DA, W / 2, 325, 58, 760);
-  divider(ctx, W / 2, 378, 200);
+  ctx.font = "600 26px Cinzel"; ctx.fillStyle = GOLD2; drawSpaced(ctx, "NY EPISODE", W / 2, 108, 8);
+  arabicTitle(ctx, W / 2, 205, 70, 800);
+  creamText(ctx, TITLE_DA, W / 2, 300, 66, 760);
+  subTitle(ctx, W / 2, 360, 24);
+  divider(ctx, W / 2, 402, 200);
   staticBars(ctx, W / 2, 590, 8, 4, 230, 6);
   cartouche(ctx, W / 2, 820, `EPISODE ${m.ep}`, 40);
   if (m.title) creamText(ctx, m.title, W / 2, 905, 50, 820);
@@ -229,13 +241,13 @@ function bgSquare(m) {
 function bgThumb(m) {
   const W = 1280, H = 720, c = mk(W, H), ctx = c.getContext("2d");
   scene(ctx, W, H, { rosY: 380, rosR: 260, mosques: true, mosqueScale: 0.62, lanterns: [[150, 60, .6], [W - 150, 90, .55]] });
-  arabicTitle(ctx, W / 2, 140, 96, 900);
+  arabicTitle(ctx, W / 2, 130, 64, 900);
   ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.font = "700 150px Cinzel"; ctx.shadowColor = "rgba(255,200,90,0.6)"; ctx.shadowBlur = 40;
   const g = ctx.createLinearGradient(0, 270, 0, 430); g.addColorStop(0, "#fff0c0"); g.addColorStop(1, "#c9982c");
   ctx.fillStyle = g; ctx.fillText(m.ep, W / 2, 360); ctx.shadowBlur = 0; ctx.fillText(m.ep, W / 2, 360); ctx.restore();
   ctx.font = "700 30px Cinzel"; ctx.fillStyle = GOLD2; drawSpaced(ctx, "EPISODE", W / 2, 255, 14);
-  creamText(ctx, m.title || TITLE_DA, W / 2, 520, 68, 1000, 700);
+  creamText(ctx, m.title || SERIES, W / 2, 520, 68, 1000, 700);
   divider(ctx, W / 2, 585, 220, .8);
   return c;
 }
@@ -496,6 +508,8 @@ function setFile(f) {
   const m = f.name.match(/ep(?:isode)?[\s_-]*(\d+)/i) || f.name.match(/(\d+)(?!.*\d)/); if (m) $("ep").value = parseInt(m[1], 10);
   refreshAll();
   $("go").disabled = false; $("ab").disabled = false; $("tgo").disabled = false;
+  const pl = $("player"); if (pl.src) URL.revokeObjectURL(pl.src); pl.src = URL.createObjectURL(f); $("chadd").disabled = false;
+  loadCh(); renderCh();
 }
 const drop = $("drop");
 drop.onclick = () => $("pick").click();
@@ -505,7 +519,7 @@ $("pick").onchange = e => setFile(e.target.files[0]);
 drop.addEventListener("drop", e => setFile(e.dataTransfer.files[0]));
 document.addEventListener("dragover", e => e.preventDefault());
 document.addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
-["ep", "eptitle", "when"].forEach(id => $(id).addEventListener("input", () => { refreshAll(); try { localStorage.setItem("seerah:" + id, $(id).value); } catch (e) { } }));
+["ep", "eptitle", "when"].forEach(id => $(id).addEventListener("input", () => { refreshAll(); if (id === "ep") { loadCh(); renderCh(); } else buildDesc(); try { localStorage.setItem("seerah:" + id, $(id).value); } catch (e) { } }));
 $("enh").onchange = () => { try { localStorage.setItem("seerah:enh", $("enh").checked ? "1" : "0"); } catch (e) { } };
 
 function status(el, bar) { return (txt, p, err) => { $(el).parentElement.hidden = false; $(el).textContent = txt; $(el).className = "status" + (err ? " err" : ""); if (p != null) $(bar).style.width = (p * 100).toFixed(1) + "%"; }; }
@@ -530,7 +544,7 @@ $("go").onclick = async () => {
   } catch (e) { console.error(e); vStatus("Fejl: " + (e.message || e), null, true); }
   finally { $("go").disabled = false; idle = true; it0 = performance.now(); idleLoop(); }
 };
-$("dl").onclick = () => state.videoBlob && saveFile(`Fra_seerah_til_handling_${slug()}.mp4`, state.videoBlob);
+$("dl").onclick = () => state.videoBlob && saveFile(`Profetens_liv_${slug()}.mp4`, state.videoBlob);
 
 /* før/efter-lyt: 15 sek. fra minut 1 (eller start) */
 let abCtx = null, abSrc = null, abBufs = null;
@@ -580,16 +594,80 @@ function renderPromos() {
   }
   drawTeaserPreview();
 }
-promos.forEach(p => $("dl-" + p.id).onclick = async () => saveFile(`Seerah_${slug()}_${p.id}.png`, await canvasBlob($("pv-" + p.id))));
+promos.forEach(p => $("dl-" + p.id).onclick = async () => saveFile(`Profetens_liv_${slug()}_${p.id}.png`, await canvasBlob($("pv-" + p.id))));
 
-let bgT = null, PT = makeParticles(1080, 1920, 60), spT = null;
+let bgT = null, PT = makeParticles(1080, 1920, 50), spT = null, archOverlay = null;
+const AR = { x0: 96, x1: 984, y1: 1345, ys: 820, apex: 598 };
+function archPath(ctx, inset = 0) {
+  const { x0, x1, y1, ys, apex } = AR, c = (x0 + x1) / 2;
+  ctx.beginPath(); ctx.moveTo(x0 + inset, y1 - inset); ctx.lineTo(x0 + inset, ys);
+  ctx.bezierCurveTo(x0 + inset, ys - 150, c - 170, apex + 40 + inset, c, apex + inset);
+  ctx.bezierCurveTo(c + 170, apex + 40 + inset, x1 - inset, ys - 150, x1 - inset, ys);
+  ctx.lineTo(x1 - inset, y1 - inset); ctx.closePath();
+}
+function makeArchOverlay() {
+  const c = mk(1080, 1920), x = c.getContext("2d");
+  x.shadowColor = "rgba(255,200,90,0.6)"; x.shadowBlur = 18; x.strokeStyle = GOLD; x.lineWidth = 4; archPath(x, 0); x.stroke();
+  x.shadowBlur = 0; x.strokeStyle = "rgba(212,175,55,0.5)"; x.lineWidth = 1.5; archPath(x, 12); x.stroke();
+  x.fillStyle = GOLD; starPath(x, 540, AR.apex - 2, 14, 8, 0.5); x.fill();
+  return c;
+}
+const sceneCanvas = mk(AR.x1 - AR.x0, AR.y1 - AR.apex), sctx = sceneCanvas.getContext("2d");
+const prevCanvas = mk(AR.x1 - AR.x0, AR.y1 - AR.apex), pctx = prevCanvas.getContext("2d");
+function selectedScenes() { const l = [...document.querySelectorAll("#scenes input:checked")].map(i => i.value); return l.length ? l : Object.keys(SCENES); }
+function sceneAt(list, dur, t) { const d = Math.max(6, dur / list.length), i = Math.floor(t / d); return { key: list[i % list.length], prev: i ? list[(i - 1) % list.length] : null, lt: t - i * d, d }; }
+function drawSceneArea(ctx, list, dur, t) {
+  const W = sceneCanvas.width, H = sceneCanvas.height, sc = sceneAt(list, dur, t), TR = 0.5;
+  SCENES[sc.key].draw(sctx, W, H, sc.lt);
+  ctx.save(); archPath(ctx, 0); ctx.clip();
+  if (sc.prev && sc.lt < TR) {
+    SCENES[sc.prev].draw(pctx, W, H, sc.d + sc.lt);
+    ctx.drawImage(prevCanvas, AR.x0, AR.apex);
+    const R = easeIO(sc.lt / TR) * 760; ctx.save(); starIris(ctx, 540, AR.apex + H / 2, Math.max(1, R), sc.lt * 0.6); ctx.clip();
+    ctx.drawImage(sceneCanvas, AR.x0, AR.apex); ctx.restore();
+    ctx.save(); starIris(ctx, 540, AR.apex + H / 2, Math.max(1, R), sc.lt * 0.6); ctx.strokeStyle = GOLD2; ctx.lineWidth = 5; ctx.shadowColor = "rgba(255,210,120,0.9)"; ctx.shadowBlur = 20; ctx.stroke(); ctx.restore();
+  } else ctx.drawImage(sceneCanvas, AR.x0, AR.apex);
+  // blød indre vignette
+  const g = ctx.createLinearGradient(0, AR.y1 - 160, 0, AR.y1); g.addColorStop(0, "rgba(6,20,16,0)"); g.addColorStop(1, "rgba(6,20,16,0.85)"); ctx.fillStyle = g; ctx.fillRect(AR.x0, AR.y1 - 160, AR.x1 - AR.x0, 160);
+  ctx.restore();
+  ctx.drawImage(archOverlay, 0, 0);
+}
 function drawTeaserPreview() {
-  bgT = bgVertical(meta(), "teaser"); spT = makeSprite(10, 340);
+  bgT = bgVertical(meta(), "teaser"); spT = makeSprite(8, 120); archOverlay = archOverlay || makeArchOverlay();
   const c = $("pv-teaser"), ctx = c.getContext("2d");
   const v = new Float32Array(N_HALF).map((_, i) => 0.2 + 0.6 * Math.abs(Math.sin(i * 0.7 + 1)) * (1 - i / N_HALF * .5));
-  frameT(ctx, v, 0);
+  const list = selectedScenes();
+  frameT(ctx, v, 3.2, list, 6 * list.length);
 }
-function frameT(ctx, vals, t) { ctx.drawImage(bgT, 0, 0); particles(ctx, PT, 1080, 1920, t); drawBars(ctx, spT, vals, 540, 1010, 10, 4, 340, 7); }
+function frameT(ctx, vals, t, list, dur) {
+  ctx.drawImage(bgT, 0, 0); particles(ctx, PT, 1080, 1920, t);
+  drawSceneArea(ctx, list, dur, t);
+  drawBars(ctx, spT, vals, 540, 1412, 8, 4, 120, 6);
+}
+
+/* rolig lydflade: blød "vind" (filtreret støj) + dyb, stille grundtone uden melodi. Dæmpes når der tales. */
+function makePad(n, sr, speech, level) {
+  const out = new Float32Array(n), r = rng(42);
+  let brown = 0, lp = 0, lp2 = 0;
+  const env = new Float32Array(n), win = Math.round(sr * 0.05);
+  let acc = 0; const mono = speech[0], sq = i => mono[i] * mono[i];
+  for (let i = 0; i < n; i++) { acc += sq(i); if (i >= win) acc -= sq(i - win); env[i] = Math.sqrt(Math.max(0, acc) / win); }
+  const thr = 0.02; let duck = 0; const att = 1 - Math.exp(-1 / (0.08 * sr)), rel = 1 - Math.exp(-1 / (0.6 * sr));
+  const f1 = 55, f2 = 82.5, f3 = 110;
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    brown = (brown + (r() * 2 - 1) * 0.02) * 0.998;
+    const cut = 0.012 + 0.008 * (0.5 + 0.5 * Math.sin(t * 0.21 * 6.283)) + 0.004 * Math.sin(t * 0.07 * 6.283);
+    lp += (brown - lp) * cut; lp2 += (lp - lp2) * cut;
+    const wind = lp2 * 6;
+    const swell = 0.5 + 0.5 * Math.sin(t * 0.11 * 6.283 - 1.2);
+    const drone = (Math.sin(6.283 * f1 * t) * 0.5 + Math.sin(6.283 * f2 * t) * 0.22 * swell + Math.sin(6.283 * f3 * t) * 0.12) * 0.06;
+    const target = env[i] > thr ? 1 : 0; duck += (target - duck) * (target > duck ? att : rel);
+    out[i] = (wind + drone) * level * (1 - 0.65 * duck);
+  }
+  return out;
+}
+
 const parseTime = s => { const p = String(s).trim().split(":").map(Number); return p.length === 2 ? p[0] * 60 + p[1] : (p[0] || 0); };
 
 $("tgo").onclick = async () => {
@@ -600,11 +678,20 @@ $("tgo").onclick = async () => {
     const { chans, sr } = state.processed, { data, nfr: total } = state.analysis;
     const dur = +$("tlen").value, startS = Math.min(parseTime($("tstart").value), Math.max(0, total / FPS - dur));
     const f0 = Math.round(startS * FPS), nfr = Math.min(Math.round(dur * FPS), total - f0);
+    const s0 = Math.round(startS * sr), len = Math.round(nfr / FPS * sr);
+    let mix = chans.map(c => c.slice(s0, s0 + len));
+    if ($("pad").checked) {
+      tStatus("Laver baggrundslyd …", 0.08);
+      const lvl = (+$("padvol").value / 100) * 0.9;
+      const pad = makePad(len, sr, mix, lvl);
+      mix = mix.map(c => { for (let i = 0; i < len; i++) c[i] += pad[i]; return c; });
+    }
     drawTeaserPreview();
+    const list = selectedScenes();
     state.teaserBlob = await encodeVideo({
-      w: 1080, h: 1920, nfr, chans, sr, start: Math.round(startS * sr), len: Math.round(nfr / FPS * sr), fade: true,
-      draw: (ctx, f) => frameT(ctx, data.subarray((f0 + f) * N_HALF, (f0 + f + 1) * N_HALF), f / FPS),
-      onProg: (p, eta) => tStatus(`Laver teaser … ${Math.round(p * 100)} %`, 0.1 + 0.89 * p),
+      w: 1080, h: 1920, nfr, chans: mix, sr, start: 0, len, fade: true,
+      draw: (ctx, f) => frameT(ctx, data.subarray((f0 + f) * N_HALF, (f0 + f + 1) * N_HALF), f / FPS, list, nfr / FPS),
+      onProg: p => tStatus(`Laver teaser … ${Math.round(p * 100)} %`, 0.1 + 0.89 * p),
       preview: cv => $("pv-teaser").getContext("2d").drawImage(cv, 0, 0),
     });
     tStatus(`Færdig! ${(state.teaserBlob.size / 1e6).toFixed(1)} MB · ${dur} sek. fra ${fmt(startS)}`, 1);
@@ -612,20 +699,78 @@ $("tgo").onclick = async () => {
   } catch (e) { console.error(e); tStatus("Fejl: " + (e.message || e), null, true); }
   finally { $("tgo").disabled = false; }
 };
-$("tdl").onclick = () => state.teaserBlob && saveFile(`Seerah_${slug()}_teaser.mp4`, state.teaserBlob);
+$("tdl").onclick = () => state.teaserBlob && saveFile(`Profetens_liv_${slug()}_teaser.mp4`, state.teaserBlob);
+
+
+/* ================= UI: YouTube (beskrivelse + kapitler) ================= */
+const DEFAULT_DESC = "Profetens liv – Islam i praksis er en lydserie om profeten Muhammeds ﷺ liv. Vi går gennem seerahen begivenhed for begivenhed og ser på de valg og beslutninger, han ﷺ traf – og hvad de betyder for, hvordan vi lever islam i dag.\n\nNy episode hver uge. Abonnér, så du ikke går glip af den næste.";
+const DEFAULT_TAGS = "#ProfetensLiv #IslamIPraksis #Seerah #Sirah #Islam #Profeten";
+let chapters = [];
+const t2s = t => { t = Math.max(0, Math.floor(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0"); };
+const s2t = str => { const p = String(str).trim().split(":").map(Number); if (p.some(isNaN)) return NaN; return p.reduce((a, v) => a * 60 + v, 0); };
+function saveCh() { try { localStorage.setItem("seerah:ch:" + meta().ep, JSON.stringify(chapters)); } catch (e) { } }
+function loadCh() { try { chapters = JSON.parse(localStorage.getItem("seerah:ch:" + meta().ep) || "[]"); } catch (e) { chapters = []; } }
+function renderCh() {
+  chapters.sort((a, b) => a.t - b.t);
+  const box = $("chlist"); box.innerHTML = "";
+  chapters.forEach((c, i) => {
+    const row = document.createElement("div"); row.className = "chrow";
+    row.innerHTML = `<input type="text" class="cht" value="${t2s(c.t)}" aria-label="Tid"><input type="text" class="chn" placeholder="Kapitlets navn" aria-label="Navn"><button class="ghost chx" title="Slet" aria-label="Slet kapitel">✕</button>`;
+    row.querySelector(".chn").value = c.name || "";
+    row.querySelector(".cht").onchange = e => { const v = s2t(e.target.value); if (!isNaN(v)) { c.t = v; saveCh(); renderCh(); } else e.target.value = t2s(c.t); };
+    row.querySelector(".chn").oninput = e => { c.name = e.target.value; saveCh(); buildDesc(); };
+    row.querySelector(".chx").onclick = () => { chapters.splice(i, 1); saveCh(); renderCh(); };
+    row.querySelector(".cht").ondblclick = () => { const a = $("player"); a.currentTime = c.t; a.play(); };
+    box.appendChild(row);
+  });
+  buildDesc();
+}
+function chapterWarnings() {
+  const w = []; if (!chapters.length) return w;
+  if (chapters[0].t !== 0) w.push("Første kapitel skal starte på 0:00 (tilføjes automatisk som \"Introduktion\").");
+  const list = chapters[0].t === 0 ? chapters : [{ t: 0 }].concat(chapters);
+  if (list.length < 3) w.push("YouTube kræver mindst 3 kapitler.");
+  for (let i = 1; i < list.length; i++) if (list[i].t - list[i - 1].t < 10) w.push(`Kapitlet ved ${t2s(list[i].t)} ligger under 10 sek. efter det forrige – YouTube kræver mindst 10 sek.`);
+  if (chapters.some(c => !String(c.name || "").trim())) w.push("Nogle kapitler mangler navn.");
+  return w;
+}
+function buildDesc() {
+  const m = meta(), title = `${SERIES} | Episode ${m.ep}${m.title ? ": " + m.title : ""}`;
+  $("yttitle").value = title;
+  let out = (m.title ? `Episode ${m.ep}: ${m.title}\n\n` : "") + ($("ytdesc").value.trim() || DEFAULT_DESC);
+  if (chapters.length) {
+    const list = chapters[0].t === 0 ? chapters : [{ t: 0, name: "Introduktion" }].concat(chapters);
+    out += "\n\nKapitler:\n" + list.map(c => `${t2s(c.t)} ${String(c.name || "").trim() || "…"}`).join("\n");
+  }
+  out += "\n\n" + ($("yttags").value.trim() || DEFAULT_TAGS);
+  $("ytout").value = out;
+  const w = chapterWarnings(); $("chwarn").innerHTML = w.map(x => `<li>${x}</li>`).join(""); $("chwarn").hidden = !w.length;
+}
+$("chadd").onclick = () => { const a = $("player"); chapters.push({ t: Math.floor(a.currentTime || 0), name: "" }); saveCh(); renderCh(); const rows = document.querySelectorAll(".chrow"); const tt = Math.floor(a.currentTime || 0); [...rows].find(r => r.querySelector(".cht").value === t2s(tt))?.querySelector(".chn").focus(); };
+$("chback").onclick = () => { const a = $("player"); a.currentTime = Math.max(0, a.currentTime - 10); };
+$("chfwd").onclick = () => { const a = $("player"); a.currentTime = a.currentTime + 30; };
+["ytdesc", "yttags"].forEach(id => $(id).addEventListener("input", () => { try { localStorage.setItem("seerah:" + id, $(id).value); } catch (e) { } buildDesc(); }));
+async function copy(id, btn) {
+  const v = $(id).value; let ok = false;
+  try { await navigator.clipboard.writeText(v); ok = true; } catch (e) { $(id).select(); try { ok = document.execCommand("copy"); } catch (e2) { } }
+  const o = btn.textContent; btn.textContent = ok ? "Kopieret ✓" : "Markér og kopiér selv"; setTimeout(() => btn.textContent = o, 1600);
+}
+$("cpout").onclick = e => copy("ytout", e.target); $("cptitle").onclick = e => copy("yttitle", e.target);
 
 /* faner (hash) */
 function showTab() {
-  const t = location.hash === "#promo" ? "promo" : "video";
+  const t = ["#promo", "#youtube"].includes(location.hash) ? location.hash.slice(1) : "video";
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.t === t));
   document.querySelectorAll(".pane").forEach(p => p.hidden = p.id !== "pane-" + t);
 }
 window.addEventListener("hashchange", showTab);
 
 /* start */
-try { for (const id of ["eptitle", "when"]) { const v = localStorage.getItem("seerah:" + id); if (v) $(id).value = v; } const e = localStorage.getItem("seerah:enh"); if (e) $("enh").checked = e === "1"; } catch (e) { }
-showTab();
+try { for (const id of ["eptitle", "when", "ytdesc", "yttags"]) { const v = localStorage.getItem("seerah:" + id); if (v) $(id).value = v; } const e = localStorage.getItem("seerah:enh"); if (e) $("enh").checked = e === "1"; } catch (e) { }
+if (!$("ytdesc").value) $("ytdesc").value = DEFAULT_DESC; if (!$("yttags").value) $("yttags").value = DEFAULT_TAGS;
+document.querySelector("#scenes").addEventListener("change", () => drawTeaserPreview());
+showTab(); loadCh(); renderCh();
 document.fonts.ready.then(() => Promise.all([
-  document.fonts.load("700 112px Amiri", TITLE_AR), document.fonts.load("600 26px Cinzel"),
+  document.fonts.load("700 112px Amiri", TITLE_AR + "ﷺ"), document.fonts.load("600 26px Cinzel"),
   document.fonts.load("700 46px Cinzel"), document.fonts.load("600 66px 'Cormorant Garamond'"), document.fonts.load("700 66px 'Cormorant Garamond'")
 ])).then(() => { refreshAll(); idleLoop(); });

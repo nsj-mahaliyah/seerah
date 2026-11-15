@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fra seerah til handling – videogenerator</title>
+<title>Profetens liv – Islam i praksis · videogenerator</title>
 <meta name="description" content="Lav seerah-episoder om til 1080p-videoer og promo-grafik direkte i browseren.">
 <style>
 /*FONTS*/
@@ -50,6 +50,12 @@ button.ghost.on{background:rgba(212,175,55,.18)}
 .pitem button{margin-top:10px;width:100%}
 .teaser{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start}
 @media(max-width:720px){.teaser{grid-template-columns:1fr}}
+textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #3c6d5d;background:var(--panel);color:var(--cream);font-size:14px;font-family:inherit;line-height:1.5;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:flex;gap:6px;align-items:center;padding:7px 12px;border:1px solid #3c6d5d;border-radius:999px;font-size:14px;cursor:pointer;color:var(--cream)}
+.chips input{accent-color:var(--gold)}
+.chrow{display:grid;grid-template-columns:96px 1fr 44px;gap:8px;margin-top:8px}
+.chrow button{padding:8px}
 h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color:var(--gold2);margin:0 0 10px}
 .tips li{margin:6px 0}
 </style>
@@ -57,8 +63,8 @@ h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color
 <body>
 <div class="wrap">
   <header>
-    <div class="ar">مِنَ السِّيرَةِ إِلَى المَسِيرَةِ</div>
-    <div class="da">Fra seerah til handling</div>
+    <div class="ar">سِيرَةُ النَّبِيِّ ﷺ ✦ الإِسْلَامُ فِي الوَاقِعِ</div>
+    <div class="da">Profetens liv – Islam i praksis</div>
   </header>
 
   <div class="card">
@@ -75,7 +81,7 @@ h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color
     </div>
   </div>
 
-  <nav class="tabs"><a class="tab on" data-t="video" href="#video">VIDEO</a><a class="tab" data-t="promo" href="#promo">PROMO</a></nav>
+  <nav class="tabs"><a class="tab on" data-t="video" href="#video">VIDEO</a><a class="tab" data-t="promo" href="#promo">PROMO</a><a class="tab" data-t="youtube" href="#youtube">YOUTUBE</a></nav>
 
   <section class="pane" id="pane-video">
     <div class="stage"><canvas id="view" width="1920" height="1080"></canvas></div>
@@ -114,7 +120,22 @@ h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color
       <div class="teaser">
         <div class="pitem"><canvas id="pv-teaser" width="1080" height="1920"></canvas></div>
         <div>
-          <p class="hint" style="margin-top:0">Et kort klip fra episoden med lydsøjler – til Reels, Shorts, TikTok og WhatsApp-status. Vælg et stærkt øjeblik.</p>
+          <p class="hint" style="margin-top:0">Et kort klip fra episoden med streg-animationer i guld, lydsøjler og en rolig lydflade under talen – til Reels, Shorts, TikTok og WhatsApp-status. Vælg et stærkt øjeblik.</p>
+          <div class="f"><label>Scener (skifter med stjerne-overgang)</label>
+            <div id="scenes" class="chips">
+              <label><input type="checkbox" value="kaaba" checked> Makkah om natten</label>
+              <label><input type="checkbox" value="rejse" checked> Rejsen Makkah → Madinah</label>
+              <label><input type="checkbox" value="masjid" checked> Moskéen</label>
+              <label><input type="checkbox" value="halaqa"> Halaqa i dag</label>
+              <label><input type="checkbox" value="bog"> Bog og lampe</label>
+            </div>
+            <p class="hint">Profeten ﷺ og sahaba vises aldrig som figurer – historien fortælles gennem steder og ting.</p>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <label class="check"><input type="checkbox" id="pad" checked> Rolig baggrundslyd</label>
+            <input type="range" id="padvol" min="10" max="100" value="45" aria-label="Lydstyrke for baggrundslyd" style="flex:1;min-width:140px;accent-color:#d4af37">
+          </div>
+          <p class="hint" style="margin-top:4px">Blød vind og en dyb, stille grundtone – ingen musik eller melodi. Dæmpes automatisk, når der tales.</p>
           <div class="grid" style="grid-template-columns:1fr 1fr">
             <div class="f"><label for="tstart">Start (mm:ss)</label><input type="text" id="tstart" value="1:00"></div>
             <div class="f"><label for="tlen">Længde</label><select id="tlen"><option value="30">30 sek.</option><option value="45">45 sek.</option><option value="60" selected>60 sek.</option></select></div>
@@ -128,6 +149,25 @@ h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color
           </ul>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="pane" id="pane-youtube" hidden>
+    <div class="card">
+      <h2>Kapitler</h2>
+      <p class="hint" style="margin-top:0">Afspil episoden og tryk <b>Markér kapitel her</b>, når et nyt emne starter. Skriv et kort navn. Dobbeltklik på tiden for at hoppe dertil.</p>
+      <audio id="player" controls preload="metadata" style="width:100%"></audio>
+      <div class="row"><button id="chadd" disabled>＋ Markér kapitel her</button><button class="ghost" id="chback">−10 sek.</button><button class="ghost" id="chfwd">+30 sek.</button></div>
+      <div id="chlist" style="margin-top:12px"></div>
+      <ul id="chwarn" class="hint err" hidden></ul>
+    </div>
+    <div class="card">
+      <h2>Titel og beskrivelse</h2>
+      <div class="f"><label for="yttitle">Titel</label><div class="row" style="margin-top:0;flex-wrap:nowrap"><input type="text" id="yttitle" readonly><button class="ghost" id="cptitle">Kopiér</button></div></div>
+      <div class="f" style="margin-top:12px"><label for="ytdesc">Fast seriebeskrivelse (gemmes)</label><textarea id="ytdesc" rows="5"></textarea></div>
+      <div class="f" style="margin-top:12px"><label for="yttags">Hashtags (gemmes)</label><input type="text" id="yttags"></div>
+      <div class="f" style="margin-top:12px"><label for="ytout">Færdig beskrivelse</label><textarea id="ytout" rows="14" readonly></textarea></div>
+      <div class="row"><button id="cpout">Kopiér beskrivelse</button></div>
     </div>
   </section>
 </div>
