@@ -141,7 +141,7 @@ function arabicTitle(ctx, x, y, size, maxW) {
   ctx.restore();
 }
 function subTitle(ctx, x, y, size) { ctx.save(); ctx.font = `600 ${size}px Cinzel`; ctx.fillStyle = GOLD2; drawSpaced(ctx, TITLE_SUB, x, y, size * 0.42); ctx.restore(); }
-function creamText(ctx, text, x, y, size, maxW, weight = 600, family = "'Cormorant Garamond'", color = CREAM) {
+function creamText(ctx, text, x, y, size, maxW, weight = 600, family = "'Cormorant Garamond', Amiri", color = CREAM) {
   ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
   fitFont(ctx, text, weight, family, size, maxW);
   ctx.fillStyle = color; ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = size * 0.2; ctx.fillText(text, x, y);
@@ -217,7 +217,7 @@ function bgVertical(m, kind) {
   const T = kind === "teaser";
   cartouche(ctx, W / 2, T ? 1505 : 1420, `EPISODE ${m.ep}`, T ? 44 : 50);
   if (m.title) creamText(ctx, m.title, W / 2, T ? 1592 : 1530, T ? 54 : 60, 860);
-  const cta = kind === "story" ? (m.when || "Ude nu på YouTube") : "Hele episoden på YouTube";
+  const cta = kind === "story" ? (m.when || "Ude nu på YouTube") : (m.when || "");
   ctx.save(); fitFont(ctx, cta.toUpperCase(), 600, "Cinzel", 36, 760); ctx.fillStyle = GOLD2; drawSpaced(ctx, cta.toUpperCase(), W / 2, T ? 1672 : 1640, 6); ctx.restore();
   if (kind === "story") staticBars(ctx, W / 2, 1010, 9, 4, 360, 7);
   return c;
@@ -504,10 +504,11 @@ function setFile(f) {
   if (!f) return;
   state.file = f; state.decoded = state.processed = state.analysis = null; state.procKey = ""; state.videoBlob = state.teaserBlob = null;
   $("dl").hidden = true; $("tdl").hidden = true;
+  TP.segs = null; TP.units = []; TP.clips = []; $("clipwrap").hidden = true; $("tana").disabled = false;
   $("fname").textContent = f.name;
   const m = f.name.match(/ep(?:isode)?[\s_-]*(\d+)/i) || f.name.match(/(\d+)(?!.*\d)/); if (m) $("ep").value = parseInt(m[1], 10);
   refreshAll();
-  $("go").disabled = false; $("ab").disabled = false; $("tgo").disabled = false;
+  $("go").disabled = false; $("ab").disabled = false; $("tgo").disabled = true;
   const pl = $("player"); if (pl.src) URL.revokeObjectURL(pl.src); pl.src = URL.createObjectURL(f); $("chadd").disabled = false;
   loadCh(); renderCh();
 }
@@ -634,10 +635,9 @@ function drawSceneArea(ctx, list, dur, t) {
 }
 function drawTeaserPreview() {
   bgT = bgVertical(meta(), "teaser"); spT = makeSprite(8, 120); archOverlay = archOverlay || makeArchOverlay();
-  const c = $("pv-teaser"), ctx = c.getContext("2d");
+  if (typeof TP !== "undefined" && TP.clips.length) return previewAuto(TZ.intro + 1.5);
   const v = new Float32Array(N_HALF).map((_, i) => 0.2 + 0.6 * Math.abs(Math.sin(i * 0.7 + 1)) * (1 - i / N_HALF * .5));
-  const list = selectedScenes();
-  frameT(ctx, v, 3.2, list, 6 * list.length);
+  frameT($("pv-teaser").getContext("2d"), v, 3.2, ["masjid"], 6);
 }
 function frameT(ctx, vals, t, list, dur) {
   ctx.drawImage(bgT, 0, 0); particles(ctx, PT, 1080, 1920, t);
@@ -670,35 +670,12 @@ function makePad(n, sr, speech, level) {
 
 const parseTime = s => { const p = String(s).trim().split(":").map(Number); return p.length === 2 ? p[0] * 60 + p[1] : (p[0] || 0); };
 
-$("tgo").onclick = async () => {
-  if (!state.file || !supported(tStatus)) return;
-  $("tgo").disabled = true; $("tdl").hidden = true;
-  try {
-    await prepare(tStatus);
-    const { chans, sr } = state.processed, { data, nfr: total } = state.analysis;
-    const dur = +$("tlen").value, startS = Math.min(parseTime($("tstart").value), Math.max(0, total / FPS - dur));
-    const f0 = Math.round(startS * FPS), nfr = Math.min(Math.round(dur * FPS), total - f0);
-    const s0 = Math.round(startS * sr), len = Math.round(nfr / FPS * sr);
-    let mix = chans.map(c => c.slice(s0, s0 + len));
-    if ($("pad").checked) {
-      tStatus("Laver baggrundslyd …", 0.08);
-      const lvl = (+$("padvol").value / 100) * 0.9;
-      const pad = makePad(len, sr, mix, lvl);
-      mix = mix.map(c => { for (let i = 0; i < len; i++) c[i] += pad[i]; return c; });
-    }
-    drawTeaserPreview();
-    const list = selectedScenes();
-    state.teaserBlob = await encodeVideo({
-      w: 1080, h: 1920, nfr, chans: mix, sr, start: 0, len, fade: true,
-      draw: (ctx, f) => frameT(ctx, data.subarray((f0 + f) * N_HALF, (f0 + f + 1) * N_HALF), f / FPS, list, nfr / FPS),
-      onProg: p => tStatus(`Laver teaser … ${Math.round(p * 100)} %`, 0.1 + 0.89 * p),
-      preview: cv => $("pv-teaser").getContext("2d").drawImage(cv, 0, 0),
-    });
-    tStatus(`Færdig! ${(state.teaserBlob.size / 1e6).toFixed(1)} MB · ${dur} sek. fra ${fmt(startS)}`, 1);
-    $("tdl").hidden = false;
-  } catch (e) { console.error(e); tStatus("Fejl: " + (e.message || e), null, true); }
-  finally { $("tgo").disabled = false; }
-};
+$("tgo").onclick = renderTeaser;
+$("tana").onclick = analyseTeaser;
+["tlen", "tcompose"].forEach(id => $(id).addEventListener("change", () => { if (TP.units.length) autoPick(); }));
+["tanim", "tcap"].forEach(id => $(id).addEventListener("change", () => { if (TP.units.length) renderClips(); }));
+$("npick").onchange = async e => { const f = e.target.files[0]; if (f) { $("nname").textContent = "Indlæser …"; try { await loadNasheedFromFile(f); $("bgmode").value = "nasheed"; } catch (err) { $("nname").textContent = "Kunne ikke læse filen"; } } };
+$("nbtn").onclick = () => $("npick").click();
 $("tdl").onclick = () => state.teaserBlob && saveFile(`Profetens_liv_${slug()}_teaser.mp4`, state.teaserBlob);
 
 
@@ -768,7 +745,7 @@ window.addEventListener("hashchange", showTab);
 /* start */
 try { for (const id of ["eptitle", "when", "ytdesc", "yttags"]) { const v = localStorage.getItem("seerah:" + id); if (v) $(id).value = v; } const e = localStorage.getItem("seerah:enh"); if (e) $("enh").checked = e === "1"; } catch (e) { }
 if (!$("ytdesc").value) $("ytdesc").value = DEFAULT_DESC; if (!$("yttags").value) $("yttags").value = DEFAULT_TAGS;
-document.querySelector("#scenes").addEventListener("change", () => drawTeaserPreview());
+restoreNasheed();
 showTab(); loadCh(); renderCh();
 document.fonts.ready.then(() => Promise.all([
   document.fonts.load("700 112px Amiri", TITLE_AR + "ﷺ"), document.fonts.load("600 26px Cinzel"),

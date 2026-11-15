@@ -9,6 +9,7 @@
 /*FONTS*/
 :root{--bg:#06231c;--panel:#0b3229;--line:#2a5a4b;--gold:#d4af37;--gold2:#f0d68c;--cream:#f3ecd9;--muted:#9fb8ad}
 *{box-sizing:border-box}
+html{background:#041a15}
 body{margin:0;background:radial-gradient(ellipse at top,#0e3d31,#041a15 70%) fixed;color:var(--cream);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
 .wrap{max-width:1120px;margin:0 auto;padding:24px 20px 60px}
 header{text-align:center;margin-bottom:18px}
@@ -54,6 +55,13 @@ textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #3c6d5
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips label{display:flex;gap:6px;align-items:center;padding:7px 12px;border:1px solid #3c6d5d;border-radius:999px;font-size:14px;cursor:pointer;color:var(--cream)}
 .chips input{accent-color:var(--gold)}
+.clip{border:1px solid #2f5f50;border-radius:10px;padding:10px;margin-top:10px;background:rgba(0,0,0,.12)}
+.clip-h{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.clip-h select{flex:1;padding:7px 10px;font-size:14px}
+.clip-h button{padding:7px 11px}
+.clip-t{color:var(--gold2);font-size:13px;white-space:nowrap}
+.more{display:grid;grid-template-columns:40px 70px 1fr;gap:8px;align-items:start;margin-top:6px;font-size:13px;color:var(--muted)}
+.more button{padding:4px 8px}
 .chrow{display:grid;grid-template-columns:96px 1fr 44px;gap:8px;margin-top:8px}
 .chrow button{padding:8px}
 h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color:var(--gold2);margin:0 0 10px}
@@ -116,37 +124,32 @@ h2{font-family:"Cinzel";font-weight:600;letter-spacing:.1em;font-size:17px;color
       </div>
     </div>
     <div class="card">
-      <h2>Teaser-video (lodret)</h2>
+      <h2>Teaser-video (lodret) – laves automatisk</h2>
       <div class="teaser">
         <div class="pitem"><canvas id="pv-teaser" width="1080" height="1920"></canvas></div>
         <div>
-          <p class="hint" style="margin-top:0">Et kort klip fra episoden med streg-animationer i guld, lydsøjler og en rolig lydflade under talen – til Reels, Shorts, TikTok og WhatsApp-status. Vælg et stærkt øjeblik.</p>
-          <div class="f"><label>Scener (skifter med stjerne-overgang)</label>
-            <div id="scenes" class="chips">
-              <label><input type="checkbox" value="kaaba" checked> Makkah om natten</label>
-              <label><input type="checkbox" value="rejse" checked> Rejsen Makkah → Madinah</label>
-              <label><input type="checkbox" value="masjid" checked> Moskéen</label>
-              <label><input type="checkbox" value="halaqa"> Halaqa i dag</label>
-              <label><input type="checkbox" value="bog"> Bog og lampe</label>
-            </div>
-            <p class="hint">Profeten ﷺ og sahaba vises aldrig som figurer – historien fortælles gennem steder og ting.</p>
-          </div>
-          <div class="row" style="margin-top:6px">
-            <label class="check"><input type="checkbox" id="pad" checked> Rolig baggrundslyd</label>
-            <input type="range" id="padvol" min="10" max="100" value="45" aria-label="Lydstyrke for baggrundslyd" style="flex:1;min-width:140px;accent-color:#d4af37">
-          </div>
-          <p class="hint" style="margin-top:4px">Blød vind og en dyb, stille grundtone – ingen musik eller melodi. Dæmpes automatisk, når der tales.</p>
+          <p class="hint" style="margin-top:0">Siden lytter til episoden, finder de stærkeste sætninger og klipper dem sammen til præcis den valgte længde. Scenen vises <b>kun</b>, når emnet tydeligt passer – ellers skrives teksten frem som på en skrivemaskine. Profeten ﷺ og sahaba vises aldrig som figurer.</p>
           <div class="grid" style="grid-template-columns:1fr 1fr">
-            <div class="f"><label for="tstart">Start (mm:ss)</label><input type="text" id="tstart" value="1:00"></div>
-            <div class="f"><label for="tlen">Længde</label><select id="tlen"><option value="30">30 sek.</option><option value="45">45 sek.</option><option value="60" selected>60 sek.</option></select></div>
+            <div class="f"><label for="tlen">Længde</label><select id="tlen"><option value="30">30 sek.</option><option value="45">45 sek.</option><option value="60" selected>1 minut</option></select></div>
+            <div class="f"><label for="tcompose">Klip</label><select id="tcompose"><option value="compose" selected>Sammensæt de stærkeste sætninger</option><option value="one">Én sammenhængende passage</option></select></div>
+            <div class="f"><label for="tanim">Animation</label><select id="tanim"><option value="auto" selected>Scene kun når emnet passer</option><option value="text">Kun skrivemaskine-tekst</option></select></div>
+            <div class="f"><label for="tmode">Analyse</label><select id="tmode"><option value="full" selected>Hele episoden (bedst)</option><option value="quick">Hurtig – udvalgte dele</option></select></div>
           </div>
-          <div class="row"><button id="tgo" disabled>Lav teaser</button><button id="tdl" class="ghost" hidden>Download MP4</button></div>
+          <label class="check" style="margin-top:12px"><input type="checkbox" id="tcap" checked> Undertekster under scenerne</label>
+          <div class="row" style="margin-top:12px">
+            <div class="f" style="min-width:180px"><label for="bgmode">Baggrundslyd</label><select id="bgmode"><option value="nasheed" selected>Nasheed</option><option value="pad">Rolig lydflade</option><option value="none">Ingen</option></select></div>
+            <div style="flex:1;min-width:200px"><label class="hint" for="padvol">Styrke</label><input type="range" id="padvol" min="10" max="100" value="50" style="width:100%;accent-color:#d4af37"></div>
+          </div>
+          <div class="row" style="margin-top:6px"><button class="ghost" id="nbtn">Vælg nasheed …</button><span class="hint" id="nname"></span><input type="file" id="npick" accept="audio/*,.mp3,.m4a,.wav" hidden></div>
+          <div class="row"><button id="tana" disabled>1. Analysér episoden</button><button id="tgo" disabled>2. Lav teaser</button><button id="tdl" class="ghost" hidden>Download MP4</button></div>
           <div class="prog" hidden><div class="bar"><i id="tbarfill"></i></div><div class="status" id="tstatus"></div></div>
-          <ul class="hint tips">
-            <li>Udgiv thumbnail sammen med episoden på YouTube.</li>
-            <li>Story + teaser samme dag; opslag dagen før som påmindelse.</li>
-            <li>Brug samme ugedag og tidspunkt hver uge – det skaber vane.</li>
-          </ul>
+          <p class="hint">Første gang hentes en gratis talemodel (ca. 250 MB), som browseren gemmer. Med grafikkort tager en hel episode typisk få minutter; uden kan det tage omtrent lige så lang tid som episoden – vælg da "Hurtig".</p>
+          <div id="clipwrap" hidden>
+            <h2 style="margin-top:16px">Klip i teaseren</h2>
+            <div class="hint" id="tsum"></div>
+            <div id="clips"></div>
+            <div id="more"></div>
+          </div>
         </div>
       </div>
     </div>

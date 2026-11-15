@@ -12,6 +12,6 @@ css = "".join(
     f"{base64.b64encode(open(os.path.join(src, 'fonts', f), 'rb').read()).decode()}) format('woff2')}}\n" for n, w, f in fonts)
 html = open(os.path.join(src, "shell.html")).read()
 html = html.replace("/*FONTS*/", css).replace("/*MUXER*/", open(os.path.join(src, "vendor", "mp4-muxer.js")).read())
-html = html.replace("/*APP*/", open(os.path.join(src, "scenes.js")).read() + "\n" + open(os.path.join(src, "app.js")).read())
+html = html.replace("/*APP*/", open(os.path.join(src, "scenes.js")).read() + "\n" + open(os.path.join(src, "app.js")).read() + "\n" + open(os.path.join(src, "teaser.js")).read())
 open(os.path.join(here, "index.html"), "w").write(html)
 print("index.html", len(html), "bytes")
